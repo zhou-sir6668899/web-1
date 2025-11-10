@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hawk Space — 二手市场</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--accent:#00eaff;--accent2:#ffd400;background:#000;color:#fff}
+    *{box-sizing:border-box;font-family:Inter, "Microsoft YaHei", sans-serif}
+    body{margin:0;background:linear-gradient(180deg,#010101,#07111a);color:#eaeef1;min-height:100vh}
+    header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.03)}
+    .brand{font-weight:700;color:var(--accent);letter-spacing:1px}
+    .user {display:flex;gap:12px;align-items:center}
+    .btn{background:linear-gradient(90deg,var(--accent),var(--accent2));border:none;padding:8px 12px;border-radius:8px;color:#041018;font-weight:700;cursor:pointer}
+    .container{display:grid;grid-template-columns:1fr 340px;gap:18px;padding:18px;max-width:1200px;margin:18px auto}
+    @media (max-width:960px){ .container{grid-template-columns:1fr; padding:12px} .sidebar{order:2} .main{order:1} }
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 6px 18px rgba(0,0,0,0.6)}
+    .form input,.form textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);background:rgba(255,255,255,0.02);color:#fff;margin:8px 0;outline:none}
+    .form label{font-size:13px;color:#b9cbd6}
+    .products{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+    .prod-img{width:100%;height:160px;object-fit:cover;border-radius:8px;background:#111}
+    .prod-title{font-weight:600;color:#fff;margin:6px 0}
+    .meta{font-size:12px;color:#9fb2bf}
+    .chat-box{position:fixed;right:18px;bottom:18px;width:320px;max-height:420px;display:flex;flex-direction:column}
+    .chat-messages{flex:1;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+    .chat-input{display:flex;gap:8px;padding:8px;border-top:1px solid rgba(255,255,255,0.03)}
+    .small-btn{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.03);color:#fff}
+    .link{color:var(--accent);text-decoration:none}
+    .center{text-align:center;color:#98abc0;padding:14px}
+    .comment{background:rgba(255,255,255,0.02);padding:8px;border-radius:8px;font-size:13px}
+    .owner-actions{display:flex;gap:6px; margin-top:8px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Hawk Space 二手市场</div>
+    <div class="user">
+      <div id="userEmail">未登录</div>
+      <button id="signOutBtn" class="small-btn" style="display:none">登出</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="main">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:700">商品列表</div>
+          <div style="font-size:13px;color:#9fb2bf">实时更新 · 可搜索</div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <input id="searchInput" placeholder="搜索标题或描述" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:rgba(255,255,255,0.02);color:#fff">
+          <button id="refreshBtn" class="small-btn">刷新</button>
+        </div>
+        <div id="productsList" class="products" style="margin-top:12px;min-height:120px">
+          <div class="center">加载中…</div>
+        </div>
+      </div>
+
+      <!-- 如果需要更多区域可在此添加 -->
+    </section>
+
+    <aside class="sidebar">
+      <div class="card">
+        <div style="font-weight:700;margin-bottom:8px">发布商品</div>
+        <div class="form">
+          <label>标题</label>
+          <input id="title" placeholder="例如：iPhone 11 128G" />
+          <label>描述</label>
+          <textarea id="desc" rows="4" placeholder="商品描述、成色、取货方式等"></textarea>
+          <label>价格（元）</label>
+          <input id="price" type="number" placeholder="例如：500" />
+          <label>图片（支持单张）</label>
+          <input id="fileInput" type="file" accept="image/*" />
+          <div style="height:8px"></div>
+          <button id="postBtn" class="btn">发布商品</button>
+          <div id="postMsg" style="margin-top:8px;color:#ffd880"></div>
+        </div>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="card">
+        <div style="font-weight:700;margin-bottom:8px">我的商品</div>
+        <div id="myProducts" style="min-height:60px">暂无商品</div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- 聊天框 -->
+  <div class="chat-box card" style="width:320px;right:18px;bottom:18px">
+    <div style="font-weight:700;margin-bottom:6px">全站聊天</div>
+    <div id="chatMessages" class="chat-messages" style="min-height:160px"></div>
+    <div class="chat-input">
+      <input id="chatInput" placeholder="说点什么..." style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:rgba(255,255,255,0.02);color:#fff">
+      <button id="sendChat" class="small-btn">发送</button>
+    </div>
+  </div>
+
+  <!-- 模块化 Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+    import {
+      getAuth, onAuthStateChanged, signOut
+    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+    import {
+      getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, where, doc, deleteDoc, getDocs
+    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+    import {
+      getStorage, ref as sref, uploadBytes, getDownloadURL, deleteObject
+    } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-storage.js";
+
+    // ======= 把你之前的 firebaseConfig 放这里 =======
+    const firebaseConfig = {
+      apiKey: "AIzaSyADOCcNc25GUmDNKiHGZxLnFcUjaq1tlOo",
+      authDomain: "hawk-e6b7b.firebaseapp.com",
+      projectId: "hawk-e6b7b",
+      storageBucket: "hawk-e6b7b.firebasestorage.app",
+      messagingSenderId: "569058504244",
+      appId: "1:569058504244:web:485093c03906bd05c6a461"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    // DOM
+    const userEmailEl = document.getElementById('userEmail');
+    const signOutBtn = document.getElementById('signOutBtn');
+    const postBtn = document.getElementById('postBtn');
+    const fileInput = document.getElementById('fileInput');
+    const titleEl = document.getElementById('title');
+    const descEl = document.getElementById('desc');
+    const priceEl = document.getElementById('price');
+    const postMsg = document.getElementById('postMsg');
+    const productsList = document.getElementById('productsList');
+    const myProductsDiv = document.getElementById('myProducts');
+    const searchInput = document.getElementById('searchInput');
+    const refreshBtn = document.getElementById('refreshBtn');
+
+    // Chat DOM
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const sendChat = document.getElementById('sendChat');
+
+    let currentUser = null;
+
+    // auth state
+    onAuthStateChanged(auth, user => {
+      if(!user) {
+        // 未登录，跳回登录页
+        window.location.href = 'index.html';
+        return;
+      }
+      currentUser = user;
+      userEmailEl.textContent = user.email || user.uid;
+      signOutBtn.style.display = 'inline-block';
+      // load realtime data
+      initProductsListener();
+      loadMyProducts();
+      initChatListener();
+    });
+
+    signOutBtn.addEventListener('click', async ()=>{
+      await signOut(auth);
+      window.location.href = 'index.html';
+    });
+
+    // 上传并发布商品
+    postBtn.addEventListener('click', async ()=>{
+      const title = titleEl.value.trim();
+      const desc = descEl.value.trim();
+      const price = Number(priceEl.value) || 0;
+      const file = fileInput.files[0];
+      if(!title || !desc || !file) { postMsg.textContent = '请填写标题、描述并选择图片'; return; }
+      postMsg.textContent = '上传中...';
+      try {
+        // upload to storage under products/{uid}/{timestamp}_{name}
+        const path = `products/${currentUser.uid}/${Date.now()}_${file.name}`;
+        const ref = sref(storage, path);
+        const snapshot = await uploadBytes(ref, file);
+        const url = await getDownloadURL(snapshot.ref);
+        // write product doc
+        const docRef = await addDoc(collection(db, 'products'), {
+          title, desc, price, imageURL: url, storagePath: path,
+          sellerUid: currentUser.uid, sellerEmail: currentUser.email || null,
+          ts: serverTimestamp()
+        });
+        postMsg.textContent = '发布成功';
+        titleEl.value=''; descEl.value=''; priceEl.value=''; fileInput.value='';
+      } catch(e) {
+        console.error(e); postMsg.textContent = '发布失败：'+ (e.message || e);
+      }
+      setTimeout(()=>postMsg.textContent='',2500);
+    });
+
+    // Realtime products listener
+    let unsubscribeProducts = null;
+    function initProductsListener(){
+      const q = query(collection(db,'products'), orderBy('ts','desc'));
+      unsubscribeProducts = onSnapshot(q, snap=>{
+        productsList.innerHTML='';
+        if(snap.empty){ productsList.innerHTML = '<div class="center">暂无商品</div>'; return; }
+        snap.forEach(docSnap=>{
+          const d = docSnap.data(); const id = docSnap.id;
+          const card = document.createElement('div'); card.className='card';
+          card.style.padding='0'; card.style.overflow='hidden';
+          card.innerHTML = `
+            <div style="padding:12px;">
+              <img src="${d.imageURL || ''}" alt="" class="prod-img" />
+              <div style="padding:8px 0;">
+                <div class="prod-title">${escapeHtml(d.title)}</div>
+                <div class="meta">¥ ${d.price} · 卖家：${d.sellerEmail || '匿名'}</div>
+                <div style="margin-top:8px;color:#cde6ff">${escapeHtml(d.desc)}</div>
+                <div class="owner-actions"></div>
+                <div style="margin-top:8px"><a href="#" data-id="${id}" class="link view-comments">查看/发表评论</a></div>
+              </div>
+            </div>`;
+          // owner actions: delete if owner
+          const ownerActions = card.querySelector('.owner-actions');
+          if(currentUser && d.sellerUid === currentUser.uid){
+            const delBtn = document.createElement('button'); delBtn.className='small-btn'; delBtn.textContent='删除';
+            delBtn.onclick = async ()=>{
+              if(!confirm('确认删除该商品？')) return;
+              try {
+                // delete storage object
+                if(d.storagePath){
+                  const delRef = sref(storage, d.storagePath);
+                  await deleteObject(delRef).catch(()=>{});
+                }
+                await deleteDoc(doc(db, 'products', id));
+                alert('已删除');
+              } catch(e){ alert('删除失败:'+e.message); }
+            };
+            ownerActions.appendChild(delBtn);
+          }
+          productsList.appendChild(card);
+        });
+        // attach comment viewers
+        document.querySelectorAll('.view-comments').forEach(a=>{
+          a.addEventListener('click', (ev)=>{
+            ev.preventDefault();
+            const pid = a.getAttribute('data-id');
+            openProductComments(pid);
+          });
+        });
+      }, err=>{
+        productsList.innerHTML = '<div class="center">加载失败</div>';
+        console.error(err);
+      });
+    }
+
+    // Load my products (simple list)
+    async function loadMyProducts(){
+      const q = query(collection(db,'products'), where('sellerUid','==', currentUser.uid), orderBy('ts','desc'));
+      const snap = await getDocs(q);
+      if(snap.empty){ myProductsDiv.innerHTML = '暂无商品'; return; }
+      myProductsDiv.innerHTML = '';
+      snap.forEach(s=>{
+        const d=s.data(); const id=s.id;
+        const el = document.createElement('div');
+        el.style.padding='6px 0';
+        el.innerHTML = `<div style="font-weight:600">${escapeHtml(d.title)}</div><div class="meta">¥${d.price}</div>`;
+        myProductsDiv.appendChild(el);
+      });
+    }
+
+    // Simple comments modal (create a floating panel)
+    let commentPanel = null;
+    function openProductComments(productId){
+      // if panel exists remove first
+      if(commentPanel){ commentPanel.remove(); commentPanel = null; }
+      commentPanel = document.createElement('div');
+      commentPanel.style.position='fixed';
+      commentPanel.style.left='50%'; commentPanel.style.top='50%';
+      commentPanel.style.transform='translate(-50%,-50%)';
+      commentPanel.style.width='90%'; commentPanel.style.maxWidth='720px';
+      commentPanel.style.maxHeight='80vh'; commentPanel.style.overflow='auto';
+      commentPanel.style.zIndex=9999;
+      commentPanel.style.padding='12px';
+      commentPanel.style.borderRadius='12px';
+      commentPanel.style.background='linear-gradient(180deg, rgba(5,5,8,0.96), rgba(8,10,14,0.96))';
+      commentPanel.style.border='1px solid rgba(255,255,255,0.03)';
+      commentPanel.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:700">商品评论</div>
+          <button id="closeComments" class="small-btn">关闭</button>
+        </div>
+        <div id="commentsList" style="margin-top:12px;min-height:120px"></div>
+        <div style="margin-top:8px;display:flex;gap:8px">
+          <input id="commentInput" placeholder="写评论..." style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:rgba(255,255,255,0.02);color:#fff">
+          <button id="sendComment" class="small-btn">发送</button>
+        </div>
+      `;
+      document.body.appendChild(commentPanel);
+      document.getElementById('closeComments').onclick = ()=>{ commentPanel.remove(); commentPanel=null; };
+      // realtime comments listener
+      const commentsList = commentPanel.querySelector('#commentsList');
+      const sendCommentBtn = commentPanel.querySelector('#sendComment');
+      const commentInput = commentPanel.querySelector('#commentInput');
+
+      const commentsRef = collection(db, 'products', productId, 'comments');
+      const q = query(commentsRef, orderBy('ts','asc'));
+      const unsubscribe = onSnapshot(q, snap=>{
+        commentsList.innerHTML = '';
+        if(snap.empty){ commentsList.innerHTML = '<div class="center">暂无评论</div>'; return; }
+        snap.forEach(docSnap=>{
+          const d = docSnap.data();
+          const node = document.createElement('div');
+          node.className = 'comment';
+          node.innerHTML = `<div style="font-weight:600">${d.userEmail || '匿名'}</div>
+                            <div style="margin-top:6px">${escapeHtml(d.text)}</div>
+                            <div class="meta" style="margin-top:6px">${d.ts && d.ts.toDate ? d.ts.toDate().toLocaleString() : ''}</div>`;
+          commentsList.appendChild(node);
+        });
+        commentsList.scrollTop = commentsList.scrollHeight;
+      });
+
+      sendCommentBtn.onclick = async ()=>{
+        const text = commentInput.value.trim();
+        if(!text){ return; }
+        await addDoc(commentsRef, { text, userUid: currentUser.uid, userEmail: currentUser.email || null, ts: serverTimestamp() });
+        commentInput.value = '';
+      };
+
+      // when panel closed, unsubscribe
+      commentPanel.onremove = ()=>unsubscribe();
+    }
+
+    // Chat area - global
+    function initChatListener(){
+      const chatRef = collection(db, 'chat_messages');
+      const q = query(chatRef, orderBy('ts','asc'));
+      onSnapshot(q, snap=>{
+        chatMessages.innerHTML = '';
+        if(snap.empty){ chatMessages.innerHTML = '<div class="center">暂无消息</div>'; return; }
+        snap.forEach(docSnap=>{
+          const d = docSnap.data();
+          const el = document.createElement('div');
+          el.innerHTML = `<div style="font-size:13px"><strong style="color:${d.userUid===currentUser.uid ? 'var(--accent)' : '#9fb2bf'}">${d.userEmail || '匿名'}</strong> <span class="meta">${d.ts && d.ts.toDate ? d.ts.toDate().toLocaleTimeString() : ''}</span></div>
+                          <div style="margin-top:4px">${escapeHtml(d.text)}</div>`;
+          chatMessages.appendChild(el);
+        });
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      });
+    }
+
+    sendChat.addEventListener('click', async ()=>{
+      const text = chatInput.value.trim();
+      if(!text) return;
+      await addDoc(collection(db,'chat_messages'), { text, userUid: currentUser.uid, userEmail: currentUser.email || null, ts: serverTimestamp() });
+      chatInput.value='';
+    });
+
+    // refresh products manually
+    refreshBtn.addEventListener('click', ()=>{
+      if(unsubscribeProducts) unsubscribeProducts(); initProductsListener();
+    });
+
+    // helper escape
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  </script>
+</body>
+</html>
